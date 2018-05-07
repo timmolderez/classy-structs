@@ -49,14 +49,16 @@ defmodule Class do
 
     methods = Enum.filter(block,
       fn(member) ->
-        is_tuple(member) and elem(member, 0) != :var and elem(member, 0) != :extends
+        is_tuple(member) 
+        and elem(member, 0) != :var 
+        and elem(member, 0) != :extends
+        and elem(member, 0) != :__aliases__
       end)
-    
+
     extends = Enum.find(block,
       fn(member) -> is_tuple(member) and elem(member, 0) == :extends end)
     super_classes = if (extends != nil) do elem(extends, 2) else [] end
 
-    IO.inspect __CALLER__
     all_fields = Enum.reduce(super_classes, fields, 
       fn(super_class,fields) ->
         super_instance = instantiate_class(super_class, __CALLER__)
@@ -70,7 +72,7 @@ defmodule Class do
             end
           end)
       end)
-
+      
     # Generate a default constructor (if needed)
     methods = if (search_methods(methods, fn(name,arity) -> name == :new and arity == 0 end)) do
       methods
@@ -92,10 +94,15 @@ defmodule Class do
           if (name == :new or name == :__struct__) do 
             false
           else
-            search_methods(methods,
+            overriding_method = search_methods(methods,
               fn(m_name, m_arity) -> 
-                not (name == m_name and arity == m_arity)
+                name == m_name and arity == m_arity
               end)
+            if (overriding_method != nil) do
+              false
+            else
+              true
+            end
           end
         end)
 
@@ -154,9 +161,7 @@ defmodule Class do
     Shape~>scale(square, 2.0)
   """
   defmacro _module ~> expr do
-    IO.inspect expr
     receiver = List.first(elem(expr, 2))
-    IO.inspect receiver
     quote do
       module = unquote(receiver).__struct__
       module.unquote(expr)
