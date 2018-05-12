@@ -4,6 +4,7 @@ defclass Empty do
 end
 
 defclass Animal do
+
   var length: 50
   var height: 50
 
@@ -18,9 +19,16 @@ defclass Animal do
   def sound(_this) do
     "..."
   end
+
+  @abstract description(struct()) :: String.t
 end
 
 defmodule SubClasses do
+  # A caveat of `extends` is that superclasses must be defined in another context,
+  # i.e. another file or in another module. Hence the `SubClasses` module.
+  # This is because, in Elixir, one module cannot depend on another module 
+  # that is defined in the same context.
+
   defclass Dog do
     extends Animal
     var species: "Greyhound"
@@ -32,6 +40,10 @@ defmodule SubClasses do
   
     def sound(this) do
       if (this.height > 20) do "Woof!" else "Bark!" end
+    end
+
+    def description(this) do
+      "Dog, species:" <> this.species
     end
   end
   
@@ -46,6 +58,10 @@ defmodule SubClasses do
   
     def sound(_this) do
       "Meow!"
+    end
+
+    def description(this) do
+      "Cat, species: " <> this.species
     end
   end
 end
@@ -92,6 +108,7 @@ defmodule ClassTest do
     assert Animal.sound(c) == "..."
     assert Cat.sound(c) == "Meow!"
     assert Animal~>sound(c) == "Meow!"
+    assert Animal~>description(c) == "Cat, species: European shorthair"
   end
 
   test "multiple inheritance" do
@@ -101,6 +118,7 @@ defmodule ClassTest do
     assert Animal.sound(pc) == "..."
     assert PuppyCat.sound(pc) == "Meow!"
     assert Animal~>sound(pc) == "Meow!"
+    assert Animal~>description(pc) == "Cat, species: European shorthair"
     assert pc.length == 80
     assert pc.species == "European shorthair"
   end

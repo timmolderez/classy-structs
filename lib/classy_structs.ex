@@ -15,50 +15,59 @@ defmodule Class do
     Defines a new immutable class
     
     The defclass macro is similar in use to defmodule, except that you can also
-    use the `var` macro to define fields, and the `extend` macro to specify superclasses.
+    use the `var` macro to define fields, and the `extends` macro to specify superclasses.
 
     ## Examples
-    
       defclass Animal do
-        var weight: 10
-        var speed: 20
-
-        def sound() do
-          ""
-        end
+        var weight: 0
+        @abstract sound(Animal) :: String.t
       end
 
       defclass Dog do
         extends Animal
-        var speed: 40
-        var breed: "Greyhound"
+        var species: ""
 
-        def sound() do
-          "Woof!"
-        end
+        def new(species), do
       end
   """
-  defmacro defclass(name, block) do
-    block = elem(Keyword.get(block, :do), 2)
 
-    fields = Enum.filter(block,
-      fn(member) -> is_tuple(member) and elem(member, 0) == :var end)
-    # Expand the "var" macros so we get a Keyword list
-    fields = Enum.map(fields, 
-      fn(field) -> Macro.expand(field,__CALLER__) end)
+  defmacro defclass(name, do: body) do
+    # Retrieve the list of all class members
+    block = if (macro_name(body) == :__block__) do
+      elem(body, 2)
+    else
+      [body]
+    end
 
-    methods = Enum.filter(block,
-      fn(member) ->
-        is_tuple(member) 
-        and elem(member, 0) != :var 
-        and elem(member, 0) != :extends
-        and elem(member, 0) != :__aliases__
+    ### Class attributes
+
+    attributes = Enum.filter(block,
+      fn(member) -> is_tuple(member) and macro_name(member) == :@ end)
+    # Rename any @abstract attributes to @callback
+    attributes = Enum.map(attributes,
+      fn(attribute) -> 
+        if (attribute_name(attribute) == :abstract) do
+          rename_attribute(attribute, :callback)
+        else
+          attribute
+        end
       end)
+
+    ### Super classes
 
     extends = Enum.find(block,
       fn(member) -> is_tuple(member) and elem(member, 0) == :extends end)
     super_classes = if (extends != nil) do elem(extends, 2) else [] end
 
+    ### Class fields
+
+    fields = Enum.filter(block,
+      fn(member) -> is_tuple(member) and macro_name(member) == :var end)
+    # Expand the "var" macros so we get a Keyword list
+    fields = Enum.map(fields, 
+      fn(field) -> Macro.expand(field,__CALLER__) end)
+
+    # Include all inherited fields
     all_fields = Enum.reduce(super_classes, fields, 
       fn(super_class,fields) ->
         super_instance = instantiate_class(super_class, __CALLER__)
@@ -72,6 +81,14 @@ defmodule Class do
             end
           end)
       end)
+
+    ### Class methods
+
+    methods = Enum.filter(block,
+      fn(member) ->
+        is_tuple(member) 
+        and (not Enum.member? [:@, :var, :extends, :__aliases__], macro_name(member))
+      end)
       
     # Generate a default constructor (if needed)
     methods = if (search_methods(methods, fn(name,arity) -> name == :new and arity == 0 end)) do
@@ -84,6 +101,7 @@ defmodule Class do
       end]
     end
 
+    # Include all inherited methods
     all_methods = Enum.reduce(super_classes, methods,
       fn(super_class, methods) ->
         module = Macro.expand(super_class,__CALLER__)
@@ -126,12 +144,26 @@ defmodule Class do
         methods ++ delegates  
       end)
 
+    behaviours = Enum.reduce(super_classes, [], fn(super_class, behaviours) ->
+        module = Macro.expand(super_class,__CALLER__)
+        # Only add a @behaviour for super classes with @callbacks
+        if (function_exported?(module, :behaviour_info, 1)) do
+          behaviour = quote do
+            @behaviour unquote(super_class)
+          end
+          behaviours ++ [behaviour]
+        else
+          behaviours
+        end
+      end)
+
     quote do
       defmodule unquote(name) do
         defstruct(
           unquote(all_fields)
         )
-
+        unquote(attributes)
+        unquote(behaviours)
         unquote(all_methods)
       end
     end
@@ -156,9 +188,22 @@ defmodule Class do
     The function is dispatched based on the type of the first argument.
     (To use static dispatch, use the `.` operator instead of `~>`.)
 
-    ##Examples
-    Animal~>walk(dog)
-    Shape~>scale(square, 2.0)
+    ## Examples
+      use Class
+
+      defclass Animal do
+        def sound(this), do: "..."
+      end
+      
+      defclass Cat do
+        extends Animal
+        def sound(this), do: "Meow!"
+      end
+
+      c = Cat.new()
+      Animal.sound(c)   # "..."
+      Animal~>sound(c)  # "Meow!"
+      
   """
   defmacro _module ~> expr do
     receiver = List.first(elem(expr, 2))
@@ -197,5 +242,24 @@ defmodule Class do
     # See https://stackoverflow.com/questions/41313995/elixir-convert-integer-to-unicode-character
     x = 97 + i # The UTF-8 code point for the letter "a" is 97
     String.to_atom(<<x::utf8>>)
+  end
+
+  defp rename_attribute(attribute_ast, new_name) do
+    body = elem(attribute_ast, 2)
+    body_first = List.first(body)
+    new_body_first = put_elem(body_first, 0, new_name)
+    new_body = List.replace_at(body,0,new_body_first)
+    put_elem(attribute_ast, 2, new_body)
+  end
+
+  # Given an AST of an attribute, get its name
+  defp attribute_name(attribute_ast) do
+    elem(List.first(elem(attribute_ast, 2)), 0)
+  end
+
+  # Given an AST representing the application of a macro,
+  # get the name of that macro
+  defp macro_name(ast) do
+    elem(ast, 0)
   end
 end
