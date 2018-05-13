@@ -20,7 +20,7 @@ defclass Animal do
     "..."
   end
 
-  @abstract description(struct()) :: String.t
+  @abstract description(Animal) :: String.t
 end
 
 defmodule SubClasses do
