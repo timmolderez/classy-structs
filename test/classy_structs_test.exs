@@ -1,13 +1,27 @@
+#
+# Classy structs test suite; to execute it, run `mix test`
+#
+
 use Class
 
 defclass Empty do
 end
 
+defmodule PlainStruct do
+  defstruct x: 5, y: 6
+  def foo(this) do this.x end
+  def bar(this) do this.y end
+end
+
 defclass Animal do
+  @moduledoc """
+    A class representing some properties of an animal
+  """
 
   var length: 50
   var height: 50
 
+  @spec setDimensions(Animal, number, number) :: Animal
   def setDimensions(this, length, height) do
     %{this| length: length, height: height}
   end
@@ -21,10 +35,22 @@ defclass Animal do
   end
 
   @abstract description(Animal) :: String.t
+
+  def testNoParams, do: "Testing method without parameters"
+  def testPrivate, do: private()
+  defp private(), do: "Testing private method"
+  def testGuarded(x) when is_integer(x), do: x
+  def testGuarded(x) when is_boolean(x), do: x
+
+  @doc """ 
+    Doc test 
+  """
+  def attributeTest(), do: "Testing method with attribute"
 end
 
 defmodule SubClasses do
-  # A caveat of `extends` is that superclasses must be defined in another context,
+
+  # Note: A caveat of `extends` is that superclasses must be defined in another context,
   # i.e. another file or in another module. Hence the `SubClasses` module.
   # This is because, in Elixir, one module cannot depend on another module 
   # that is defined in the same context.
@@ -63,6 +89,13 @@ defmodule SubClasses do
     def description(this) do
       "Cat, species: " <> this.species
     end
+  end
+
+  defclass SubStruct do
+    extends PlainStruct
+    var x: 7
+    var z: 8
+    def foo(_this) do "OK" end
   end
 end
 
@@ -121,5 +154,30 @@ defmodule ClassTest do
     assert Animal~>description(pc) == "Cat, species: European shorthair"
     assert pc.length == 80
     assert pc.species == "European shorthair"
+  end
+
+  test "parameterless method" do
+    assert Animal.testNoParams() == "Testing method without parameters"
+  end
+
+  test "private method" do
+    assert Animal.testPrivate() == "Testing private method"
+  end
+
+  test "guarded method" do
+    alias SubClasses.Cat
+
+    assert Animal.testGuarded(5) == 5
+    assert Animal.testGuarded(true)
+    assert Cat.testGuarded(5) == 5
+    assert Cat.testGuarded(true)
+  end
+
+  test "using a struct as superclass" do
+    alias SubClasses.SubStruct
+    s = SubStruct.new()
+    assert s == %SubStruct{x: 7, y: 6, z: 8}
+    assert SubStruct.foo(s) == "OK"
+    assert SubStruct.bar(s) == 6
   end
 end

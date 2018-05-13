@@ -15,7 +15,9 @@ defmodule Class do
     Defines a new immutable class
     
     The defclass macro is similar in use to defmodule, except that you can also
-    use the `var` macro to define fields, and the `extends` macro to specify superclasses.
+    use `var` to define fields, and `extends` to specify superclasses.
+
+    For more information: https://github.com/timmolderez/classy-structs#usage
 
     ## Examples
       defclass Animal do
@@ -231,7 +233,12 @@ defmodule Class do
       fn(method) ->
         api = List.first(elem(method, 2))
         name = elem(api, 0)
-        arity = length(elem(api, 2))
+        arity = if (elem(api, 2) == nil) do
+          0
+        else
+          length(elem(api, 2))
+        end
+        
         condition_fn.(name, arity)
       end)
   end

@@ -105,7 +105,7 @@ Note that class instances are structs. This is important to keep in mind because
 * It implies that all fields are public.
 * The syntax for [accessing and updating fields](https://elixir-lang.org/getting-started/structs.html#accessing-and-updating-structs) is reused.
 
-Just to show how close classes are to structs, the `Rectangle` example expands to:
+Just to show how close classes are to structs, the `Rectangle` example actually expands to:
 
 ```Elixir
   defmodule Rectangle do
@@ -169,7 +169,7 @@ Class with one superclass:
     extends Animal
     var weight: 30
     var bark: "Woof!"
-    def sound(_this), do: this.bark
+    def sound(this), do: this.bark
   end
 
   defclass Cat do
@@ -207,6 +207,8 @@ Class with multiple superclasses:
 ```
 
 When listing multiple superclasses, the order of these superclasses matters: if there are multiple superclasses that define the same field or method, the first one wins.
+
+Finally, as class instances are just structs, you can also use a struct (that wasn't defined using `defclass`) as a superclass. This may come in useful whenever you'd like to extend structs from existing Elixir code.
 
 ### <a id="calls"></a>Static and dynamic method calls
 
