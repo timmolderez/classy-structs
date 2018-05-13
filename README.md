@@ -1,4 +1,4 @@
-# Classy structs
+![alt text](https://raw.githubusercontent.com/timmolderez/classy-structs/master/priv/classy_structs.png "Classy structs logo")
 
 *Classy structs* provides object-oriented features, such as inheritance and polymorphism, on top of Elixir's structs.
 
