@@ -79,7 +79,7 @@ defmodule Class do
             if (Enum.find(fields, fn({field_key, _}) -> field_key == super_field_key end)) do
               fields
             else
-              fields ++ [{super_field_key, super_field_value}]
+              fields ++ [{super_field_key, Macro.escape(super_field_value)}]
             end
           end)
       end)
