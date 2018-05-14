@@ -62,14 +62,22 @@ To learn more about everything *Classy structs* has to offer, go ahead and have 
 ```elixir
 def deps do
   [
-    {:classy_structs, git: "https://github.com/timmolderez/classy-structs.git"}
+    {:classy_structs, "~> 0.9"}
   ]
 end
 ```
 
 ## <a id="usage"></a>Usage
 
-### Basic classes
+[Basic classes](#basic)<br />
+[Methods](#methods)<br />
+[Constructors](#constructors)<br />
+[Inheritance](#inheritance)<br />
+[Static and dynamic method calls](#calls)<br />
+[Super calls](#super)<br />
+[Abstract methods](#abstract)
+
+### <a id="basic"></a>Basic classes
 
 `defclass` is used to define a class. The following is an example of a simple class definition:
 
@@ -123,7 +131,7 @@ Just to show how close classes are to structs, the `Rectangle` example actually 
   end
 ```
 
-### Methods
+### <a id="methods"></a>Methods
 
 Methods in *Classy structs* are just plain Elixir functions. There only is the convention that the class instance should be passed explicitly as the first parameter. (Unlike e.g. Java or C++, there is no implicit `this`.)
 
@@ -131,7 +139,7 @@ The only construct in *Classy structs* that relies on this convention is [dynami
 
 You can also leave out the class instance parameter to mimic a "static method".
 
-### Constructors
+### <a id="constructors"></a>Constructors
 
 A constructor can be defined by adding a `new` function:
 
@@ -149,7 +157,7 @@ If no constructors are defined, a default one (without parameters) is automatica
 
 Given that a class instance is a struct, you're of course free to directly create your struct/instance instead of using constructors.
 
-### Inheritance
+### <a id="inheritance"></a>Inheritance
 
 *Classy structs* supports multiple inheritance. To make use of it, include an `extends` construct in your class definition that lists one or more superclasses.
 
@@ -243,7 +251,7 @@ In other words, the `.` operator performs static dispatch. To call methods using
   "Woof!"
 ```
 
-### Super calls
+### <a id="super"></a>Super calls
 
 Because it is possible to make static method calls, there is no need for an additional construct for "super calls". For example:
 
@@ -261,7 +269,7 @@ Because it is possible to make static method calls, there is no need for an addi
 
 The `Text.toString(this)` call is a super call.
 
-### Abstract methods
+### <a id="abstract"></a>Abstract methods
 
 Using the `@abstract` attribute, it is possible to define abstract methods. These are methods without a body; they only specify the method's interface. Any class that extends a superclass with abstract methods must provide an implementation for all abstract methods:
 
