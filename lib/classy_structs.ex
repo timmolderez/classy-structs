@@ -1,8 +1,10 @@
 defmodule Class do
   @moduledoc """
-    Defines a few macros that add an inheritance and polymorphism mechanism on top of Elixir's structs,
-    such that structs can be used as if they are (immutable) class instances.
-    @author Tim Molderez
+  The `Class` module defines a few macros that provide object-oriented features, such as inheritance and polymorphism, on top of Elixir's structs.
+
+  Additional documentation is available on the [Classy structs Github page](https://github.com/timmolderez/classy-structs#usage).
+  
+  @author Tim Molderez
   """
 
   defmacro __using__(_opts) do
@@ -12,27 +14,28 @@ defmodule Class do
   end
 
   @doc """
-    Defines a new immutable class
-    
-    The defclass macro is similar in use to defmodule, except that you can also
-    use `var` to define fields, and `extends` to specify superclasses.
+  Defines a new immutable class
+  
+  The defclass macro is similar in use to defmodule, except that you can also
+  use `var` to define fields, and `extends` to specify superclasses.
 
-    For more information: https://github.com/timmolderez/classy-structs#usage
+  Additional documentation is available on the [Classy structs Github page](https://github.com/timmolderez/classy-structs#usage).
 
-    ## Examples
-      defclass Animal do
-        var weight: 0
-        @abstract sound(Animal) :: String.t
-      end
+  ## Examples
+  ```Elixir
+    defclass Animal do
+      var weight: 0
+      @abstract sound(Animal) :: String.t
+    end
 
-      defclass Dog do
-        extends Animal
-        var species: ""
+    defclass Dog do
+      extends Animal
+      var species: ""
 
-        def new(species), do
-      end
+      def new(species), do
+    end
+  ```
   """
-
   defmacro defclass(name, do: body) do
     # Retrieve the list of all class members
     block = if (macro_name(body) == :__block__) do
@@ -172,40 +175,44 @@ defmodule Class do
   end
 
   @doc """
-    Defines a new field in a class, with its default value
-    (The default value cannot be an anonymous function.)
+  Defines a new field in a class, with its default value
+  (The default value cannot be an anonymous function.)
 
-    ## Examples
-    
-      var species: "Mammal"
-      var dimensions: [20, 40]
+  ## Examples
+  
+  ```Elixir
+    var species: "Mammal"
+    var dimensions: [20, 40]
+  ```
   """
   defmacro var([keyword]) do
     keyword
   end
 
   @doc """
-    Call a function using dynamic dispatch
+  Call a function using dynamic dispatch
 
-    The function is dispatched based on the type of the first argument.
-    (To use static dispatch, use the `.` operator instead of `~>`.)
+  The function is dispatched based on the type of the first argument.
+  (To use static dispatch, use the `.` operator instead of `~>`.)
 
-    ## Examples
-      use Class
+  ## Examples
+    
+  ```Elixir
+    use Class
 
-      defclass Animal do
-        def sound(this), do: "..."
-      end
-      
-      defclass Cat do
-        extends Animal
-        def sound(this), do: "Meow!"
-      end
+    defclass Animal do
+      def sound(this), do: "..."
+    end
+    
+    defclass Cat do
+      extends Animal
+      def sound(this), do: "Meow!"
+    end
 
-      c = Cat.new()
-      Animal.sound(c)   # "..."
-      Animal~>sound(c)  # "Meow!"
-      
+    c = Cat.new()
+    Animal.sound(c)   # "..."
+    Animal~>sound(c)  # "Meow!"
+  ```
   """
   defmacro _module ~> expr do
     receiver = List.first(elem(expr, 2))
